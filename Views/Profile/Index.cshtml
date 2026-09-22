@@ -1,0 +1,345 @@
+@model CvManagementSystem.Models.ApplicationUser
+@inject Microsoft.Extensions.Localization.IStringLocalizer<CvManagementSystem.SharedResource> Localizer
+@{ ViewData["Title"] = "Profile"; var canEdit = (bool)ViewBag.CanEdit; }
+
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-me">@Localizer["Me"]</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-info">@Localizer["Info"]</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-projects">@Localizer["Projects"]</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-cvs">@Localizer["CVs"]</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-badges">@Localizer["Badges"]</a></li>
+</ul>
+
+<div class="tab-content">
+    <div class="tab-pane fade show active" id="tab-me">
+        <form id="meForm" class="row g-3" style="max-width:500px">
+            <input type="hidden" id="userId" value="@Model.Id" />
+            <input type="hidden" id="version" value="@Model.Version" />
+            <div class="col-12">
+                <label class="form-label">@Localizer["FirstName"]</label>
+                <input class="form-control" id="firstName" value="@Model.FirstName" @(canEdit ? "" : "disabled") />
+            </div>
+            <div class="col-12">
+                <label class="form-label">@Localizer["LastName"]</label>
+                <input class="form-control" id="lastName" value="@Model.LastName" @(canEdit ? "" : "disabled") />
+            </div>
+            <div class="col-12">
+                <label class="form-label">@Localizer["Location"]</label>
+                <input class="form-control" id="location" value="@Model.Location" @(canEdit ? "" : "disabled") />
+            </div>
+            <div class="col-12 text-muted small" id="saveStatus">Auto-saves every few seconds…</div>
+        </form>
+
+        @if (canEdit)
+        {
+            <div class="mt-4" style="max-width:500px">
+                <label class="form-label">Personal Photo</label>
+               
+                <div id="photoDropzone" class="border rounded p-4 text-center text-muted" style="cursor:pointer">
+                    @if (!string.IsNullOrEmpty(Model.PhotoUrl))
+                    {
+                        <img src="@Model.PhotoUrl" style="max-height:100px" class="mb-2 d-block mx-auto" />
+                    }
+                    Drag an image here, or click to choose one
+                </div>
+                <input type="file" id="photoInput" accept="image/*" hidden />
+                <input type="hidden" id="photoUrl" value="@Model.PhotoUrl" />
+            </div>
+        }
+    </div>
+
+    <div class="tab-pane fade" id="tab-info">
+        <table class="table align-middle">
+            <thead><tr><th style="width:220px">Attribute</th><th>Value</th>@if (canEdit){<th></th>}</tr></thead>
+            <tbody>
+            @foreach (var v in Model.AttributeValues)
+            {
+                <tr class="@(v.IsFilled ? "" : "table-danger")">
+                    <td class="fw-semibold">@v.AttributeDefinition.Name</td>
+                    <td>
+                        @if (canEdit)
+                        {
+                            @await Html.PartialAsync("_AttributeField", new CvManagementSystem.Services.CvAttributeDisplayValue
+                       { Definition = v.AttributeDefinition, Value = v })
+                        }
+                        else
+                        {
+                            @(v.IsFilled ? "filled" : "empty")
+                        }
+                    </td>
+                    @if (canEdit)
+                    {
+                        <td>
+                            <form asp-action="RemoveInfoAttribute" method="post" class="d-inline"
+                                  onsubmit="return confirm('Remove this attribute from your profile?')">
+                                <input type="hidden" name="valueId" value="@v.Id" />
+                                <button class="btn btn-sm btn-outline-danger">Remove</button>
+                            </form>
+                        </td>
+                    }
+                </tr>
+            }
+            </tbody>
+        </table>
+
+        @if (canEdit)
+        {
+            <hr />
+            <h6>Add an attribute from the library</h6>
+            <div class="row g-2 mb-2" style="max-width:700px">
+                <div class="col-4">
+                    <select class="form-select form-select-sm" id="infoAttrCategory">
+                        <option value="">All categories</option>
+                        @foreach (var c in Enum.GetValues<CvManagementSystem.Models.AttributeCategory>())
+                        {
+                            <option value="@c">@DisplayFormat.Humanize(c)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-4">
+                    <input class="form-control form-control-sm" id="infoAttrPrefix" placeholder="Search by name (prefix)…" />
+                </div>
+                <div class="col-3">
+                    <select class="form-select form-select-sm" id="infoAttrResult"></select>
+                </div>
+                <div class="col-1">
+                    <button class="btn btn-sm btn-primary" id="infoAttrAddBtn" type="button">Add</button>
+                </div>
+            </div>
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="infoAttrRecentOnly" />
+                <label class="form-check-label small" for="infoAttrRecentOnly">Show only recently-used attributes</label>
+            </div>
+            <form id="addInfoAttrForm" asp-action="AddInfoAttribute" method="post" class="d-none">
+                <input type="hidden" name="attributeDefinitionId" id="infoAttrHiddenId" />
+            </form>
+        }
+    </div>
+
+    <div class="tab-pane fade" id="tab-projects">
+        @{ var projIndex = 0; }
+        @foreach (var p in Model.Projects)
+        {
+            var i = projIndex++;
+            <div class="card mb-2"><div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6>@p.Name</h6>
+                            <div class="text-muted small">@p.PeriodStart.ToString("yyyy-MM") — @(p.PeriodEnd?.ToString("yyyy-MM") ?? "present")</div>
+                            <div class="mb-1">@string.Join(", ", p.Tags.Select(t => t.TagName))</div>
+                        @if (!string.IsNullOrWhiteSpace(p.DescriptionMarkdown))
+                        {
+                            <div class="small">@Html.Raw(Markdig.Markdown.ToHtml(p.DescriptionMarkdown))</div>
+                        }
+                    </div>
+                    @if (canEdit)
+                    {
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-sm btn-outline-secondary" type="button"
+                                    data-bs-toggle="collapse" data-bs-target="#editProject@(i)">Edit</button>
+                            <form asp-controller="Projects" asp-action="Delete" asp-route-id="@p.Id" method="post"
+                                  onsubmit="return confirm('Delete this project?')">
+                                <button class="btn btn-sm btn-outline-danger">Delete</button>
+                            </form>
+                        </div>
+                    }
+                </div>
+
+                @if (canEdit)
+                {
+                    <div class="collapse mt-3" id="editProject@(i)">
+                        <form asp-controller="Projects" asp-action="Edit" asp-route-id="@p.Id" method="post" class="row g-2 project-edit-form">
+                            <input type="hidden" name="version" value="@p.Version" />
+                            <div class="col-12"><input class="form-control" name="name" value="@p.Name" required /></div>
+                            <div class="col-6"><input class="form-control" type="date" name="periodStart" value="@p.PeriodStart.ToString("yyyy-MM-dd")" required /></div>
+                            <div class="col-6"><input class="form-control" type="date" name="periodEnd" value="@p.PeriodEnd?.ToString("yyyy-MM-dd")" /></div>
+                            <div class="col-12"><textarea class="form-control" name="descriptionMarkdown" rows="3">@p.DescriptionMarkdown</textarea></div>
+                            <div class="col-12">
+                                <input class="form-control project-tags-input" data-existing="@string.Join(",", p.Tags.Select(t => t.TagName))" />
+                            </div>
+                            <div class="col-12"><button class="btn btn-primary btn-sm">Save changes</button></div>
+                        </form>
+                    </div>
+                }
+            </div></div>
+        }
+
+        @if (canEdit)
+        {
+            <hr />
+            <h6>Add a project</h6>
+            <form asp-controller="Projects" asp-action="Create" method="post" class="row g-2" style="max-width:600px">
+                <div class="col-12"><input class="form-control" name="name" placeholder="Project name" required /></div>
+                <div class="col-6"><input class="form-control" type="date" name="periodStart" required /></div>
+                <div class="col-6"><input class="form-control" type="date" name="periodEnd" /></div>
+                <div class="col-12"><textarea class="form-control" name="descriptionMarkdown" rows="3"
+                    placeholder="Description (Markdown supported)"></textarea></div>
+                <div class="col-12">
+                    
+                    <input class="form-control" name="tagsInput" id="projectTagsInput" placeholder="Technology tags…" />
+                </div>
+                <div class="col-12"><button class="btn btn-primary btn-sm">Add project</button></div>
+            </form>
+        }
+    </div>
+
+    <div class="tab-pane fade" id="tab-cvs">
+        <table class="table table-hover">
+            <thead><tr><th>@Localizer["Positions"]</th><th>@Localizer["Status"]</th><th>Likes</th><th>@Localizer["Updated"]</th></tr></thead>
+            <tbody>
+            @foreach (var cv in Model.Cvs.Where(c => !c.IsHiddenDueToLostAccess))
+            {
+                <tr onclick="location.href='@Url.Action("Details", "Cv", new { id = cv.Id })'" style="cursor:pointer">
+                    <td>@cv.Position.Title</td><td>@cv.Status</td><td>@cv.Likes.Count</td><td>@cv.UpdatedAt.ToString("yyyy-MM-dd")</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="tab-pane fade" id="tab-badges">
+        @{ var badges = (List<CvManagementSystem.Models.Badge>)ViewBag.Badges; }
+        <div class="d-flex flex-wrap gap-2 mb-3">
+        @foreach (var b in badges)
+        {
+            <span class="badge @(b.Achieved ? "text-bg-success" : "text-bg-light text-dark border")"
+                  title="@b.Description">@b.Title (@b.CurrentValue)</span>
+        }
+        </div>
+        <img src="@Url.Action("BadgesSvg", new { id = Model.Id })" alt="Badges panel" class="border rounded mb-2" />
+        <div>
+            <a class="btn btn-sm btn-outline-secondary" href="@Url.Action("BadgesSvg", new { id = Model.Id })" download="badges.svg">
+                Download SVG panel
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="~/js/attr-autosave.js"></script>
+<script>
+    
+    if (document.querySelector('.attr-field')) initAttrAutosave('CHANGE_ME', 'CHANGE_ME_unsigned_preset');
+
+ 
+            const infoAttrCategory = document.getElementById('infoAttrCategory');
+            const infoAttrPrefix = document.getElementById('infoAttrPrefix');
+            const infoAttrResult = document.getElementById('infoAttrResult');
+            const infoAttrRecentOnly = document.getElementById('infoAttrRecentOnly');
+
+    async function refreshInfoAttrLookup() {
+        if (!infoAttrResult) return;
+        const params = new URLSearchParams();
+        if (infoAttrPrefix.value) params.set('prefix', infoAttrPrefix.value);
+        if (infoAttrCategory.value) params.set('category', infoAttrCategory.value);
+        if (infoAttrRecentOnly.checked) params.set('recentOnly', 'true');
+        const res = await fetch(`/Attributes/Lookup?${params}`);
+        const items = await res.json();
+        infoAttrResult.innerHTML = items.map(a => `<option value="${a.id}">${a.name}</option>`).join('')
+            || '<option value="">No matches</option>';
+    }
+    infoAttrPrefix?.addEventListener('input', debounce(refreshInfoAttrLookup, 250));
+    infoAttrCategory?.addEventListener('change', refreshInfoAttrLookup);
+    infoAttrRecentOnly?.addEventListener('change', refreshInfoAttrLookup);
+    function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+    refreshInfoAttrLookup();
+
+    document.getElementById('infoAttrAddBtn')?.addEventListener('click', () => {
+        const id = infoAttrResult.value;
+        if (!id) return;
+        document.getElementById('infoAttrHiddenId').value = id;
+        document.getElementById('addInfoAttrForm').submit();
+    });
+
+    // Tagify: ready-made tag input, autocomplete against previously-entered project tags.
+    // Fetch the suggestion list once and reuse it for every tag input on this page.
+    fetch('/Projects/TagSuggestions').then(r => r.json()).then(list => {
+        const tagInput = document.getElementById('projectTagsInput');
+        if (tagInput) {
+            const tagify = new Tagify(tagInput);
+            tagify.settings.whitelist = list;
+            // IMPORTANT: post as repeated `tags` fields (tags=A&tags=B&...), not one CSV field -
+            // the ASP.NET model binder maps repeated same-name fields to string[] tags in the
+            // controller; a single comma-joined string does NOT bind to an array.
+            tagInput.closest('form').addEventListener('submit', () => {
+                tagify.value.forEach(t => {
+                    const hidden = document.createElement('input');
+                    hidden.type = 'hidden'; hidden.name = 'tags'; hidden.value = t.value;
+                    tagInput.closest('form').appendChild(hidden);
+                });
+            });
+        }
+
+        // Same wiring for every project's inline Edit form, pre-seeded with its existing tags.
+        document.querySelectorAll('.project-tags-input').forEach(input => {
+            const tagify = new Tagify(input);
+            tagify.settings.whitelist = list;
+            const existing = input.dataset.existing;
+            if (existing) tagify.addTags(existing.split(',').filter(Boolean));
+
+            input.closest('form').addEventListener('submit', () => {
+                tagify.value.forEach(t => {
+                    const hidden = document.createElement('input');
+                    hidden.type = 'hidden'; hidden.name = 'tags'; hidden.value = t.value;
+                    input.closest('form').appendChild(hidden);
+                });
+            });
+        });
+    });
+
+    // Drag-and-drop photo upload -> external cloud storage (Cloudinary unsigned upload example).
+    // Swap CLOUD_NAME / UPLOAD_PRESET for your own, or point this at S3/another provider.
+    const dropzone = document.getElementById('photoDropzone');
+    const photoInputEl = document.getElementById('photoInput');
+    async function uploadPhoto(file) {
+        const CLOUD_NAME = 'CHANGE_ME';
+        const UPLOAD_PRESET = 'CHANGE_ME_unsigned_preset';
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', UPLOAD_PRESET);
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.secure_url) {
+            document.getElementById('photoUrl').value = data.secure_url;
+            dirty = true; // picked up by the next auto-save tick
+            dropzone.innerHTML = `<img src="${data.secure_url}" style="max-height:100px" class="mb-2 d-block mx-auto" />Photo updated`;
+        }
+    }
+    dropzone?.addEventListener('click', () => photoInputEl.click());
+    photoInputEl?.addEventListener('change', () => photoInputEl.files[0] && uploadPhoto(photoInputEl.files[0]));
+    dropzone?.addEventListener('dragover', e => e.preventDefault());
+    dropzone?.addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer.files[0]) uploadPhoto(e.dataTransfer.files[0]); });
+
+    // Auto-save: tracked locally, saved every 5-10s, never on every keystroke.
+    let dirty = false;
+    ['firstName','lastName','location'].forEach(id =>
+        document.getElementById(id)?.addEventListener('input', () => dirty = true));
+
+    setInterval(async () => {
+        if (!dirty) return;
+        dirty = false;
+        const res = await fetch('/Profile/AutoSaveMe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name=__RequestVerificationToken]')?.value },
+            body: JSON.stringify({
+                userId: document.getElementById('userId').value,
+                firstName: document.getElementById('firstName').value,
+                lastName: document.getElementById('lastName').value,
+                location: document.getElementById('location').value,
+                photoUrl: document.getElementById('photoUrl')?.value ?? null,
+                version: parseInt(document.getElementById('version').value, 10)
+            })
+        });
+        const status = document.getElementById('saveStatus');
+        if (res.status === 409) {
+            status.innerText = 'Conflict detected - reloading latest version…';
+            setTimeout(() => location.reload(), 1500);
+        } else if (res.ok) {
+            const data = await res.json();
+            document.getElementById('version').value = data.version;
+            status.innerText = 'Saved ' + new Date().toLocaleTimeString();
+        }
+    }, 7000); // within the required 5-10s window
+</script>
+}

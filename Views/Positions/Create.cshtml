@@ -1,0 +1,85 @@
+@model CvManagementSystem.Models.Position
+@{ ViewData["Title"] = "New Position"; }
+
+<h3>New Position</h3>
+<form asp-action="Create" method="post" class="row g-3" style="max-width:700px">
+    <div class="col-12">
+        <label class="form-label">Title</label>
+        <input class="form-control" name="Title" required />
+    </div>
+    <div class="col-12">
+        <label class="form-label">Short Description</label>
+        <textarea class="form-control" name="ShortDescription" rows="3"></textarea>
+    </div>
+    <div class="col-6">
+        <label class="form-label">Company</label>
+        <input class="form-control" name="Company" />
+    </div>
+    <div class="col-6">
+        <label class="form-label">Level</label>
+        <select class="form-select" name="Level">
+            <option value="">—</option>
+            @foreach (var l in Enum.GetValues<CvManagementSystem.Models.PositionLevel>())
+            {
+                <option value="@l">@l</option>
+            }
+        </select>
+    </div>
+    <div class="col-6">
+        <label class="form-label">Access</label>
+        <select class="form-select" name="AccessType">
+            <option value="Public">Public</option>
+            <option value="Restricted">Restricted (configure rules after creating)</option>
+        </select>
+    </div>
+    <div class="col-6">
+        <label class="form-label">Max projects in generated CV</label>
+        <input class="form-control" type="number" name="MaxProjectsInCv" value="3" min="0" />
+    </div>
+
+    <div class="col-12">
+        <label class="form-label">Attributes from the library (comma-separated tag input recommended;
+            simplified here as a multi-select)</label>
+        <select class="form-select" name="attributeIds" multiple size="8" id="attrPicker"></select>
+        <div class="form-text">Type below to filter by prefix.</div>
+        <input class="form-control mt-1" id="attrPrefix" placeholder="Filter attributes…" />
+    </div>
+
+    <div class="col-12">
+        <label class="form-label">Relevant project tags</label>
+        <input class="form-control" id="projectTagsInput" placeholder="Technology tags…" />
+    </div>
+
+    <div class="col-12">
+        <button class="btn btn-primary">Create Position</button>
+    </div>
+</form>
+
+@section Scripts {
+<script>
+    
+    function humanize(s) { return s.replace(/(?<!^)([A-Z])/g, ' $1'); }
+
+    async function loadAttrs(prefix) {
+        const res = await fetch(`/Attributes/Lookup?prefix=${encodeURIComponent(prefix || '')}`);
+        const items = await res.json();
+        const select = document.getElementById('attrPicker');
+        select.innerHTML = items.map(a => `<option value="${a.id}">${a.name} (${humanize(a.category)}/${humanize(a.type)})</option>`).join('');
+    }
+    document.getElementById('attrPrefix').addEventListener('input', e => loadAttrs(e.target.value));
+    loadAttrs('');
+
+
+    const projectTagsInput = document.getElementById('projectTagsInput');
+    const projectTagify = new Tagify(projectTagsInput);
+    fetch('/Projects/TagSuggestions').then(r => r.json()).then(list => projectTagify.settings.whitelist = list);
+
+    document.querySelector('form').addEventListener('submit', () => {
+        projectTagify.value.forEach(t => {
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden'; hidden.name = 'projectTags'; hidden.value = t.value;
+            projectTagsInput.closest('form').appendChild(hidden);
+        });
+    });
+</script>
+}

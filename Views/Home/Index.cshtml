@@ -1,0 +1,73 @@
+@model CvManagementSystem.Controllers.HomeViewModel
+@inject Microsoft.AspNetCore.Identity.SignInManager<CvManagementSystem.Models.ApplicationUser> SignInManager
+@{ ViewData["Title"] = "Home"; }
+
+@if (!SignInManager.IsSignedIn(User))
+{
+    <div class="home-hero mb-4">
+        <div>
+            <h1 class="mb-2">Every position, one shared library of attributes.</h1>
+            <p class="text-body-secondary mb-0" style="max-width:52ch">
+                Recruiters build positions from a reusable attribute library. Candidates fill
+                their profile once and generate a tailored CV for each position they're eligible for.
+            </p>
+        </div>
+        <div class="d-flex gap-2 flex-shrink-0">
+            <a class="btn btn-primary" asp-controller="Account" asp-action="Register">Register</a>
+            <a class="btn btn-outline-secondary" asp-controller="Account" asp-action="Login">Log in</a>
+        </div>
+    </div>
+}
+
+<div class="row g-4">
+    <div class="col-12 col-lg-8">
+        <h4>Latest Positions</h4>
+        <table class="table table-hover align-middle">
+            <thead><tr><th>Title</th><th>Company</th><th>Level</th><th>Updated</th></tr></thead>
+            <tbody>
+            @foreach (var p in Model.LatestPositions)
+            {
+                <tr onclick="location.href='@Url.Action("Details", "Positions", new { id = p.Id })'" style="cursor:pointer">
+                    <td>@p.Title</td><td>@p.Company</td><td>@p.Level</td><td>@p.UpdatedAt.ToString("yyyy-MM-dd")</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+
+        <h4 class="mt-4">Most Popular Positions</h4>
+        <table class="table table-hover align-middle">
+            <thead><tr><th>Title</th><th>CVs submitted</th></tr></thead>
+            <tbody>
+            @foreach (var (position, count) in Model.PopularPositions)
+            {
+                <tr onclick="location.href='@Url.Action("Details", "Positions", new { id = position.Id })'" style="cursor:pointer">
+                    <td>@position.Title</td><td>@count</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="col-12 col-lg-4">
+        <h4>Statistics</h4>
+        <dl class="stat-list mb-4">
+            <div><dt>CVs in the last 24h</dt><dd>@Model.CvsLast24h</dd></div>
+            <div><dt>Total positions</dt><dd>@Model.TotalPositions</dd></div>
+            <div><dt>Total candidates</dt><dd>@Model.TotalCandidates</dd></div>
+            <div><dt>Total recruiters</dt><dd>@Model.TotalRecruiters</dd></div>
+            <div><dt>Total submitted CVs</dt><dd>@Model.TotalCvs</dd></div>
+        </dl>
+
+        <h4>Tag Cloud</h4>
+        <div class="tag-cloud">
+        @foreach (var tag in Model.TagCloud)
+        {
+            var size = 0.8 + Math.Min(tag.UsageCount, 20) * 0.05;
+            <a class="badge text-bg-secondary m-1" style="font-size:@(size)rem"
+               href="@(User.IsInRole("Recruiter") ? Url.Action("Index", "Search", new { q = tag.Name }) : Url.Action("Index", "Positions", new { tag = tag.Name }))">
+               @tag.Name
+            </a>
+        }
+        </div>
+    </div>
+</div>

@@ -1,0 +1,77 @@
+@model CvManagementSystem.Models.AttributeDefinition
+@{ ViewData["Title"] = "New Attribute"; }
+
+<h3>New Attribute</h3>
+<form asp-action="Create" method="post" class="row g-3" style="max-width:600px">
+    <div class="col-12">
+        <label class="form-label">Name (globally unique)</label>
+        <input class="form-control" name="Name" required />
+    </div>
+    <div class="col-6">
+        <label class="form-label">Category</label>
+        <select class="form-select" name="Category">
+            @foreach (var c in Enum.GetValues<CvManagementSystem.Models.AttributeCategory>())
+            {
+                <option value="@c">@DisplayFormat.Humanize(c)</option>
+            }
+        </select>
+    </div>
+    <div class="col-6">
+        <label class="form-label">Type</label>
+        <select class="form-select" name="Type" id="typeSelect">
+            @foreach (var t in Enum.GetValues<CvManagementSystem.Models.AttributeType>())
+            {
+                <option value="@t">@t</option>
+            }
+        </select>
+    </div>
+    <div class="col-12">
+        <label class="form-label">Description</label>
+        <textarea class="form-control" name="Description" rows="2"></textarea>
+    </div>
+
+    <div class="col-12" id="optionsBlock" style="display:none">
+        <label class="form-label">Dropdown options (one per line)</label>
+        <textarea class="form-control" id="optionsText" rows="4"></textarea>
+        <div id="optionInputs"></div>
+    </div>
+
+    <div class="col-12">
+        <h6>Optional validation / tuning</h6>
+    </div>
+    <div class="col-3"><label class="form-label">Min length</label><input class="form-control" type="number" name="MinLength" /></div>
+    <div class="col-3"><label class="form-label">Max length</label><input class="form-control" type="number" name="MaxLength" /></div>
+    <div class="col-3"><label class="form-label">Min value</label><input class="form-control" type="number" step="any" name="MinValue" /></div>
+    <div class="col-3"><label class="form-label">Max value</label><input class="form-control" type="number" step="any" name="MaxValue" /></div>
+    <div class="col-12"><label class="form-label">Regex pattern</label><input class="form-control" name="RegexPattern" /></div>
+
+    <div class="col-12">
+        <button class="btn btn-primary">Create Attribute</button>
+    </div>
+</form>
+
+@section Scripts {
+<script>
+    const typeSelect = document.getElementById('typeSelect');
+    const optionsBlock = document.getElementById('optionsBlock');
+    const optionsText = document.getElementById('optionsText');
+    const optionInputs = document.getElementById('optionInputs');
+
+    function toggleOptions() {
+        optionsBlock.style.display = typeSelect.value === 'OneOfMany' ? 'block' : 'none';
+    }
+    typeSelect.addEventListener('change', toggleOptions);
+    toggleOptions();
+
+    document.querySelector('form').addEventListener('submit', () => {
+        optionInputs.innerHTML = '';
+        if (typeSelect.value === 'OneOfMany') {
+            optionsText.value.split('\n').map(s => s.trim()).filter(Boolean).forEach(v => {
+                const input = document.createElement('input');
+                input.type = 'hidden'; input.name = 'options'; input.value = v;
+                optionInputs.appendChild(input);
+            });
+        }
+    });
+</script>
+}

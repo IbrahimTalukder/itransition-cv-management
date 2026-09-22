@@ -1,0 +1,56 @@
+@model CvManagementSystem.Services.CvAttributeDisplayValue
+@{
+    // Reusable per-attribute-type editable control, backed by /Profile/AutoSaveAttribute.
+    // Used on both the CV Details page (in-place editing) and the Profile "Info" tab -
+    // both write to the exact same master UserAttributeValue row (single source of truth).
+    var version = Model.Value?.Version ?? 0;
+}
+<div class="attr-field" data-attr-id="@Model.Definition.Id" data-type="@Model.Definition.Type" data-version="@version">
+    @switch (Model.Definition.Type)
+    {
+        case CvManagementSystem.Models.AttributeType.Text:
+            <textarea class="form-control" rows="3">@Model.Value?.TextValue</textarea>
+            break;
+        case CvManagementSystem.Models.AttributeType.Numeric:
+            <input class="form-control" type="number" step="any" value="@Model.Value?.NumericValue" />
+            break;
+        case CvManagementSystem.Models.AttributeType.Date:
+            <input class="form-control" type="date" value="@Model.Value?.DateValue?.ToString("yyyy-MM-dd")" />
+            break;
+        case CvManagementSystem.Models.AttributeType.Period:
+            <div class="d-flex gap-2">
+                <input class="form-control period-start" type="date" value="@Model.Value?.PeriodStart?.ToString("yyyy-MM-dd")" />
+                <input class="form-control period-end" type="date" value="@Model.Value?.PeriodEnd?.ToString("yyyy-MM-dd")" />
+            </div>
+            break;
+        case CvManagementSystem.Models.AttributeType.Boolean:
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" @(Model.Value?.BooleanValue == true ? "checked" : "") />
+            </div>
+            break;
+        case CvManagementSystem.Models.AttributeType.OneOfMany:
+            <select class="form-select">
+                <option value="">—</option>
+                @foreach (var opt in Model.Definition.Options.OrderBy(o => o.SortOrder))
+                {
+                    <option value="@opt.Id" selected="@(Model.Value?.SelectedOptionId == opt.Id)">@opt.Value</option>
+                }
+            </select>
+            break;
+        case CvManagementSystem.Models.AttributeType.Image:
+            <div class="attr-image-dropzone border rounded p-2 text-center text-muted small" style="cursor:pointer">
+                @if (!string.IsNullOrEmpty(Model.Value?.ImageUrl))
+                {
+                    <img src="@Model.Value.ImageUrl" style="max-height:60px" class="d-block mx-auto mb-1" />
+                }
+                Drag/click to upload
+            </div>
+            <input type="file" accept="image/*" hidden class="attr-image-input" />
+            <input type="hidden" class="attr-image-url" value="@Model.Value?.ImageUrl" />
+            break;
+        default:
+            <input class="form-control" value="@Model.Value?.StringValue" />
+            break;
+    }
+    <span class="small text-muted attr-save-status"></span>
+</div>

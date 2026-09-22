@@ -1,0 +1,106 @@
+@inject Microsoft.AspNetCore.Identity.SignInManager<CvManagementSystem.Models.ApplicationUser> SignInManager
+@inject Microsoft.Extensions.Localization.IStringLocalizer<CvManagementSystem.SharedResource> Localizer
+@{
+    var theme = Context.Request.Cookies["theme"] ?? "light";
+}
+<!DOCTYPE html>
+<html lang="@System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName" data-bs-theme="@theme">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - CV Management System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+    <!-- Ready-made tag input component (per requirement: "use a nice UI component for the tags") -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@@yaireo/tagify/dist/tagify.css" />
+    <link rel="stylesheet" href="~/css/site.css" />
+</head>
+<body>
+    <header class="navbar navbar-expand-lg sticky-top app-header">
+        <div class="container-fluid">
+            <a class="navbar-brand app-brand" asp-controller="Home" asp-action="Index">
+                <span class="app-brand-mark">CV</span>Management
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navMain">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link" asp-controller="Positions" asp-action="Index">@Localizer["Positions"]</a></li>
+                    @if (SignInManager.IsSignedIn(User))
+                    {
+                        <li class="nav-item"><a class="nav-link" asp-controller="Profile" asp-action="Index">@Localizer["MyProfile"]</a></li>
+                    }
+                    @if (User.IsInRole("Recruiter") || User.IsInRole("Administrator"))
+                    {
+                        <li class="nav-item"><a class="nav-link" asp-controller="Attributes" asp-action="Index">@Localizer["AttributeLibrary"]</a></li>
+                    }
+                    @if (User.IsInRole("Administrator"))
+                    {
+                        <li class="nav-item"><a class="nav-link" asp-controller="Admin" asp-action="Users">@Localizer["Users"]</a></li>
+                    }
+                </ul>
+
+                <!-- Global full-text search - available from every page, per requirement -->
+                <form class="d-flex me-3 app-search" asp-controller="Search" asp-action="Index" method="get">
+                    <input class="form-control" type="search" name="q" placeholder="@Localizer["Search"]..." />
+                </form>
+
+                <form asp-controller="Account" asp-action="SetTheme" method="post" class="me-2">
+                    <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
+                    <button class="btn btn-outline-secondary btn-sm" name="theme" value="@(theme == "light" ? "dark" : "light")">
+                        @(theme == "light" ? "🌙" : "☀️")
+                    </button>
+                </form>
+
+                <form asp-controller="Account" asp-action="SetLanguage" method="post" class="me-2">
+                    <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
+                    <select name="culture" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="en" selected="@(System.Globalization.CultureInfo.CurrentUICulture.Name == "en")">English</option>
+                        <option value="bn" selected="@(System.Globalization.CultureInfo.CurrentUICulture.Name == "bn")">বাংলা</option>
+                    </select>
+                </form>
+
+                @if (SignInManager.IsSignedIn(User))
+                {
+                    <form asp-controller="Account" asp-action="Logout" method="post">
+                        <button class="btn btn-outline-danger btn-sm">@Localizer["Logout"]</button>
+                    </form>
+                }
+                else
+                {
+                    <a class="btn btn-primary btn-sm" asp-controller="Account" asp-action="Login">@Localizer["Login"]</a>
+                }
+            </div>
+        </div>
+    </header>
+
+    <main class="container-fluid py-4">
+        @if (SignInManager.IsSignedIn(User))
+        {
+            <!-- Global antiforgery-token source: guarantees every page's JS fetch() calls that
+                 read document.querySelector('input[name=__RequestVerificationToken]') find a
+                 token, even on pages with no other <form asp-action=...> (e.g. Discussion tab
+                 as viewed by a Recruiter, who has no other form on Positions/Details). -->
+            <form id="globalAntiForgery" class="d-none">@Html.AntiForgeryToken()</form>
+        }
+        @if (TempData["Success"] is not null)
+        {
+            <div class="alert alert-success">@TempData["Success"]</div>
+        }
+        @if (TempData["Error"] is not null)
+        {
+            <div class="alert alert-danger">@TempData["Error"]</div>
+        }
+        @RenderBody()
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@@yaireo/tagify"></script>
+    <script src="~/js/site.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

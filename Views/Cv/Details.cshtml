@@ -1,0 +1,110 @@
+@model CvManagementSystem.Services.CvViewModel
+@{ ViewData["Title"] = $"CV - {Model.Position.Title}"; }
+
+<div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+        <h3>@Model.Cv.Candidate.FirstName @Model.Cv.Candidate.LastName</h3>
+        <div class="text-muted">@Model.Position.Title</div>
+        <span class="badge @(Model.Cv.Status == CvManagementSystem.Models.CvStatus.Published ? "text-bg-success" : "text-bg-secondary")">
+            @Model.Cv.Status
+        </span>
+    </div>
+    <div>
+        <a class="btn btn-outline-secondary btn-sm" asp-action="ExportPdf" asp-route-id="@Model.Cv.Id">Export PDF</a>
+        @if ((bool)ViewBag.CanEdit && Model.Cv.Status == CvManagementSystem.Models.CvStatus.Draft)
+        {
+            <form asp-action="Publish" asp-route-id="@Model.Cv.Id" method="post" class="d-inline">
+                <button class="btn btn-primary btn-sm" @(Model.CanPublish ? "" : "disabled")>Publish</button>
+            </form>
+        }
+        @if ((bool)ViewBag.IsOwner)
+        {
+            <form asp-action="Delete" asp-route-id="@Model.Cv.Id" method="post" class="d-inline"
+                  onsubmit="return confirm('Delete this CV? This cannot be undone.')">
+                <button class="btn btn-outline-danger btn-sm">Delete CV</button>
+            </form>
+        }
+        @if (User.IsInRole("Recruiter"))
+        {
+            <button class="btn btn-outline-danger btn-sm" id="likeBtn" data-id="@Model.Cv.Id"
+                    data-liked="@ViewBag.LikedByMe.ToString().ToLower()">
+                ♥ <span id="likeCount">@ViewBag.LikeCount</span>
+            </button>
+        }
+    </div>
+</div>
+
+<table class="table align-middle">
+    <tbody>
+    @foreach (var attr in Model.Attributes)
+    {
+        <tr class="@(attr.IsEmpty ? "table-danger" : "")">
+            <td style="width:220px" class="fw-semibold">@attr.Definition.Name</td>
+            <td>
+                @if ((bool)ViewBag.CanEdit)
+                {
+                    @await Html.PartialAsync("_AttributeField", attr)
+                }
+                else
+                {
+                    @(attr.IsEmpty ? "—" : FormatAttrForDisplay(attr))
+                }
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+@functions {
+
+    string FormatAttrForDisplay(CvManagementSystem.Services.CvAttributeDisplayValue attr)
+    {
+        var v = attr.Value!;
+        return attr.Definition.Type switch
+        {
+            CvManagementSystem.Models.AttributeType.Boolean => v.BooleanValue == true ? "Yes" : "No",
+            CvManagementSystem.Models.AttributeType.Date => v.DateValue?.ToString("yyyy-MM-dd") ?? "",
+            CvManagementSystem.Models.AttributeType.Period => $"{v.PeriodStart:yyyy-MM-dd} — {v.PeriodEnd:yyyy-MM-dd}",
+            CvManagementSystem.Models.AttributeType.OneOfMany => v.SelectedOption?.Value ?? "",
+            CvManagementSystem.Models.AttributeType.Numeric => v.NumericValue?.ToString() ?? "",
+            CvManagementSystem.Models.AttributeType.Image => string.IsNullOrEmpty(v.ImageUrl) ? "" : "[image]",
+            _ => v.StringValue ?? v.TextValue ?? ""
+        };
+    }
+}
+
+@if (Model.Projects.Count > 0)
+{
+    <h5 class="mt-4">Projects</h5>
+    @foreach (var p in Model.Projects)
+    {
+        <div class="mb-3">
+            <div class="fw-semibold">@p.Name</div>
+            <div class="text-muted small">@p.PeriodStart.ToString("yyyy-MM") — @(p.PeriodEnd?.ToString("yyyy-MM") ?? "present")</div>
+            @if (p.Tags.Count > 0)
+            {
+                <div class="mb-1">@string.Join(", ", p.Tags.Select(t => t.TagName))</div>
+            }
+            @if (!string.IsNullOrWhiteSpace(p.DescriptionMarkdown))
+            {
+                <div class="small">@Html.Raw(Markdig.Markdown.ToHtml(p.DescriptionMarkdown))</div>
+            }
+        </div>
+    }
+}
+
+@section Scripts {
+<script src="~/js/attr-autosave.js"></script>
+<script>
+    
+    if (document.querySelector('.attr-field')) initAttrAutosave('CHANGE_ME', 'CHANGE_ME_unsigned_preset');
+
+    const token = document.querySelector('input[name=__RequestVerificationToken]')?.value;
+    document.getElementById('likeBtn')?.addEventListener('click', async function () {
+        const res = await fetch(`/Cv/ToggleLike/${this.dataset.id}`, { method: 'POST',
+            headers: { 'RequestVerificationToken': token } });
+        const data = await res.json();
+        document.getElementById('likeCount').innerText = data.count;
+    });
+</script>
+}

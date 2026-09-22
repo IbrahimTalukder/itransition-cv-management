@@ -1,0 +1,25 @@
+@{ ViewData["Title"] = "Log in"; }
+@inject Microsoft.Extensions.Localization.IStringLocalizer<CvManagementSystem.SharedResource> Localizer
+<div class="row justify-content-center">
+    <div class="col-12 col-md-5">
+        <h3>@Localizer["LoginTitle"]</h3>
+        <div asp-validation-summary="All" class="text-danger"></div>
+        <form asp-action="Login" method="post">
+            <div class="mb-3"><label class="form-label">@Localizer["Email"]</label><input class="form-control" name="email" type="email" required /></div>
+            <div class="mb-3"><label class="form-label">@Localizer["Password"]</label><input class="form-control" name="password" type="password" required /></div>
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" name="rememberMe" id="rememberMe" />
+                <label class="form-check-label" for="rememberMe">@Localizer["RememberMe"]</label>
+            </div>
+            <button class="btn btn-primary w-100">@Localizer["LoginTitle"]</button>
+        </form>
+
+        <hr />
+        <form asp-action="ExternalLogin" method="post" class="d-grid gap-2">
+            <button class="btn btn-outline-danger" name="provider" value="Google">Continue with Google</button>
+            <button class="btn btn-outline-primary" name="provider" value="Facebook">Continue with Facebook</button>
+        </form>
+
+        <p class="mt-3">@Localizer["NoAccount"] <a asp-action="Register">@Localizer["RegisterTitle"]</a></p>
+    </div>
+</div>

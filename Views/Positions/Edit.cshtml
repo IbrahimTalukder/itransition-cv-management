@@ -1,0 +1,171 @@
+@model CvManagementSystem.Models.Position
+@{ ViewData["Title"] = "Edit Position"; }
+
+<h3>Edit Position</h3>
+<form asp-action="Edit" asp-route-id="@Model.Id" method="post" class="row g-3" style="max-width:700px">
+    <input type="hidden" name="Id" value="@Model.Id" />
+    <input type="hidden" name="version" value="@Model.Version" />
+
+    <div class="col-12">
+        <label class="form-label">Title</label>
+        <input class="form-control" name="Title" value="@Model.Title" required />
+    </div>
+    <div class="col-12">
+        <label class="form-label">Short Description</label>
+        <textarea class="form-control" name="ShortDescription" rows="3">@Model.ShortDescription</textarea>
+    </div>
+    <div class="col-6">
+        <label class="form-label">Company</label>
+        <input class="form-control" name="Company" value="@Model.Company" />
+    </div>
+    <div class="col-6">
+        <label class="form-label">Level</label>
+        <select class="form-select" name="Level">
+            <option value="">—</option>
+            @foreach (var l in Enum.GetValues<CvManagementSystem.Models.PositionLevel>())
+            {
+                <option value="@l" selected="@(Model.Level == l)">@l</option>
+            }
+        </select>
+    </div>
+    <div class="col-6">
+        <label class="form-label">Access</label>
+        <select class="form-select" name="AccessType">
+            <option value="Public" selected="@(Model.AccessType == CvManagementSystem.Models.PositionAccessType.Public)">Public</option>
+            <option value="Restricted" selected="@(Model.AccessType == CvManagementSystem.Models.PositionAccessType.Restricted)">Restricted</option>
+        </select>
+    </div>
+    <div class="col-6">
+        <label class="form-label">Max projects in generated CV</label>
+        <input class="form-control" type="number" name="MaxProjectsInCv" value="@Model.MaxProjectsInCv" min="0" />
+    </div>
+
+    <div class="col-12">
+        <h6 class="mt-2">Attributes in this position's CV template</h6>
+        <div class="form-text mb-1">Currently selected attributes are highlighted. Filter by prefix,
+            then Ctrl/Cmd-click to adjust the selection before saving.</div>
+        <select class="form-select" name="attributeIds" multiple size="10" id="attrPicker"></select>
+        <input class="form-control mt-1" id="attrPrefix" placeholder="Filter attributes…" />
+    </div>
+
+    <div class="col-12">
+        <h6 class="mt-3">Access rules</h6>
+        <table class="table table-sm" id="rulesTable">
+            <thead><tr><th>Attribute</th><th>Operator</th><th>Value</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var rule in Model.AccessRules)
+            {
+                <tr>
+                    <td>@rule.AttributeDefinition?.Name</td>
+                    <td>@rule.Operator</td>
+                    <td>@(rule.StringValue ?? rule.NumericValue?.ToString() ?? rule.DateValue?.ToString("yyyy-MM-dd") ?? (rule.OptionValueId is not null ? "(option)" : rule.Operator.ToString()))</td>
+                    <td>
+                        <form asp-action="RemoveAccessRule" method="post" onsubmit="return confirm('Remove this rule?')">
+                            <input type="hidden" name="ruleId" value="@rule.Id" />
+                            <input type="hidden" name="positionId" value="@Model.Id" />
+                            <button class="btn btn-sm btn-outline-danger">Remove</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+
+        <div class="form-text mb-2">A candidate must satisfy ALL rules below to access this position
+            (adding a rule automatically marks the position Restricted).</div>
+        <form asp-action="AddAccessRule" method="post" class="row g-2 align-items-end" style="max-width:700px">
+            <input type="hidden" name="positionId" value="@Model.Id" />
+            <div class="col-4">
+                <label class="form-label">Attribute</label>
+                <select class="form-select" name="attributeDefinitionId" id="ruleAttrSelect" required></select>
+            </div>
+            <div class="col-3">
+                <label class="form-label">Operator</label>
+                <select class="form-select" name="@nameof(PositionAccessRule.Operator)" id="ruleOperatorSelect"></select>
+            </div>
+            <div class="col-4" id="ruleValueContainer">
+                <label class="form-label">Value</label>
+                <input class="form-control" name="stringValue" id="ruleValueInput" />
+            </div>
+            <div class="col-1">
+                <button class="btn btn-primary">Add</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="col-12">
+        <button class="btn btn-primary">Save changes</button>
+    </div>
+</form>
+
+@{ var selectedIds = Model.Attributes.Select(a => a.AttributeDefinitionId).ToHashSet(); }
+@section Scripts {
+<script>
+    const selectedAttrIds = new Set(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(selectedIds)));
+
+    const attrCache = new Map();
+    
+    function humanize(s) { return s.replace(/(?<!^)([A-Z])/g, ' $1'); }
+
+    async function loadAttrs(prefix) {
+        const res = await fetch(`/Attributes/Lookup?prefix=${encodeURIComponent(prefix || '')}`);
+        const items = await res.json();
+        items.forEach(a => attrCache.set(a.id, a));
+
+
+        const select = document.getElementById('attrPicker');
+        const currentlyChecked = new Set(
+            Array.from(select.selectedOptions ?? []).map(o => parseInt(o.value)));
+        selectedAttrIds.forEach(id => currentlyChecked.add(id));
+
+        const displayIds = new Set([...items.map(a => a.id), ...currentlyChecked]);
+        select.innerHTML = Array.from(displayIds).map(id => {
+            const a = attrCache.get(id);
+            const label = a ? `${a.name} (${humanize(a.category)}/${humanize(a.type)})` : `Attribute #${id}`;
+            const isChecked = currentlyChecked.has(id);
+            return `<option value="${id}" ${isChecked ? 'selected' : ''}>${label}</option>`;
+        }).join('');
+
+        
+        select.addEventListener('change', () => {
+            selectedAttrIds.clear();
+            Array.from(select.selectedOptions).forEach(o => selectedAttrIds.add(parseInt(o.value)));
+        }, { once: false });
+
+        const ruleSelect = document.getElementById('ruleAttrSelect');
+        if (ruleSelect) {
+            ruleSelect.innerHTML = items.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+            if (items.length) loadOperatorsFor(items[0].id);
+        }
+    }
+    document.getElementById('attrPrefix').addEventListener('input', e => loadAttrs(e.target.value));
+    loadAttrs('');
+
+    async function loadOperatorsFor(attributeId) {
+        const res = await fetch(`/Positions/AttributeOperators?attributeDefinitionId=${attributeId}`);
+        const data = await res.json();
+        const opSelect = document.getElementById('ruleOperatorSelect');
+        opSelect.innerHTML = data.operators.map(o => `<option value="${o}">${o}</option>`).join('');
+
+        const container = document.getElementById('ruleValueContainer');
+        if (data.type === 'Boolean') {
+            container.innerHTML = ''; 
+        } else if (data.type === 'OneOfMany') {
+            container.innerHTML = `<label class="form-label">Value</label>
+                <select class="form-select" name="optionValueId">
+                    ${data.options.map(o => `<option value="${o.id}">${o.value}</option>`).join('')}
+                </select>`;
+        } else if (data.type === 'Numeric') {
+            container.innerHTML = `<label class="form-label">Value</label>
+                <input class="form-control" type="number" step="any" name="numericValue" />`;
+        } else if (data.type === 'Date') {
+            container.innerHTML = `<label class="form-label">Value</label>
+                <input class="form-control" type="date" name="dateValue" />`;
+        } else {
+            container.innerHTML = `<label class="form-label">Value</label>
+                <input class="form-control" name="stringValue" />`;
+        }
+    }
+    document.getElementById('ruleAttrSelect').addEventListener('change', e => loadOperatorsFor(e.target.value));
+</script>
+}

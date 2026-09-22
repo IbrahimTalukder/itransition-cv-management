@@ -1,0 +1,39 @@
+@model List<CvManagementSystem.Models.AttributeDefinition>
+@inject Microsoft.Extensions.Localization.IStringLocalizer<CvManagementSystem.SharedResource> Localizer
+@{ ViewData["Title"] = "Attribute Library"; }
+
+<div class="d-flex justify-content-between mb-3">
+    <h3>@Localizer["AttributeLibrary"]</h3>
+    <a class="btn btn-primary btn-sm" asp-action="Create">+ @Localizer["NewAttribute"]</a>
+</div>
+
+<form class="row g-2 mb-3" method="get">
+    <div class="col-auto">
+        <input class="form-control" name="prefix" placeholder="@Localizer["Search"]…" value="@ViewBag.Prefix" />
+    </div>
+    <div class="col-auto">
+        <select class="form-select" name="category">
+            <option value="">@Localizer["AllCategories"]</option>
+            @foreach (var c in Enum.GetValues<CvManagementSystem.Models.AttributeCategory>())
+            {
+                <option value="@c" selected="@(ViewBag.Category?.ToString() == c.ToString())">@DisplayFormat.Humanize(c)</option>
+            }
+        </select>
+    </div>
+    <div class="col-auto"><button class="btn btn-outline-secondary">@Localizer["Filter"]</button></div>
+</form>
+
+<table class="table table-hover align-middle">
+    <thead><tr><th>@Localizer["Title"]</th><th>@Localizer["Category"]</th><th>@Localizer["Type"]</th><th>@Localizer["LastUsed"]</th></tr></thead>
+    <tbody>
+    @foreach (var a in Model)
+    {
+        <tr onclick="location.href='@Url.Action("Edit", new { id = a.Id })'" style="cursor:pointer">
+            <td>@a.Name @if (a.IsBuiltIn) { <span class="badge text-bg-secondary">built-in</span> }</td>
+            <td>@a.Category</td>
+            <td>@a.Type</td>
+            <td>@(a.LastUsedAt?.ToString("yyyy-MM-dd") ?? "—")</td>
+        </tr>
+    }
+    </tbody>
+</table>

@@ -1,0 +1,114 @@
+@model List<CvManagementSystem.Models.Position>
+@inject Microsoft.Extensions.Localization.IStringLocalizer<CvManagementSystem.SharedResource> Localizer
+@{ ViewData["Title"] = "Positions"; }
+
+@if (User.IsInRole("Recruiter") || User.IsInRole("Administrator"))
+{
+    <form id="antiForgeryHolder">@Html.AntiForgeryToken()</form>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>@Localizer["Positions"]</h3>
+    @if (User.IsInRole("Recruiter") || User.IsInRole("Administrator"))
+    {
+        
+        <div>
+            <a class="btn btn-primary btn-sm" asp-action="Create">+ @Localizer["NewPosition"]</a>
+            <button class="btn btn-outline-secondary btn-sm" id="btnDuplicate" disabled>Duplicate selected</button>
+            <button class="btn btn-outline-danger btn-sm" id="btnDelete" disabled>Delete selected</button>
+        </div>
+    }
+</div>
+
+@if (ViewBag.TagFilter is string tagFilter && !string.IsNullOrEmpty(tagFilter))
+{
+    <div class="alert alert-secondary d-flex justify-content-between align-items-center py-2">
+        <span>Showing positions relevant to the <strong>@tagFilter</strong> tag</span>
+        <a class="btn btn-sm btn-outline-secondary" asp-action="Index">Clear filter</a>
+    </div>
+}
+
+<table class="table table-hover align-middle" id="positionsTable">
+    <thead>
+        <tr>
+            @if (User.IsInRole("Recruiter") || User.IsInRole("Administrator"))
+            {
+                <th style="width:2rem"><input type="checkbox" id="selectAll" /></th>
+            }
+            <th data-sort="title" style="cursor:pointer">@Localizer["Title"] ▲▼</th>
+            <th data-sort="company" style="cursor:pointer">@Localizer["Company"] ▲▼</th>
+            <th data-sort="level" style="cursor:pointer">@Localizer["Level"] ▲▼</th>
+            <th>@Localizer["Access"]</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var p in Model)
+    {
+        var accessible = ViewBag.AccessiblePositionIds is null ||
+            ((List<int>)ViewBag.AccessiblePositionIds).Contains(p.Id);
+        <tr class="@(accessible ? "" : "opacity-50")" data-id="@p.Id">
+            @if (User.IsInRole("Recruiter") || User.IsInRole("Administrator"))
+            {
+                <td><input type="checkbox" class="rowCheck" value="@p.Id" /></td>
+            }
+            <td><a asp-action="Details" asp-route-id="@p.Id">@p.Title</a></td>
+            <td>@p.Company</td>
+            <td>@p.Level</td>
+            <td>
+                @if (p.AccessType == CvManagementSystem.Models.PositionAccessType.Public)
+                {
+                    <span class="badge text-bg-success">@Localizer["Public"]</span>
+                }
+                else
+                {
+                    <span class="badge text-bg-warning">@Localizer["Restricted"]</span>
+                }
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+@section Scripts {
+<script>
+    
+    const selectAll = document.getElementById('selectAll');
+    const rowChecks = () => document.querySelectorAll('.rowCheck');
+    const toolbarButtons = () => document.querySelectorAll('#btnDuplicate, #btnDelete');
+
+    function refreshToolbar() {
+        const anyChecked = Array.from(rowChecks()).some(c => c.checked);
+        toolbarButtons().forEach(b => b.disabled = !anyChecked);
+    }
+    selectAll?.addEventListener('change', () => {
+        rowChecks().forEach(c => c.checked = selectAll.checked);
+        refreshToolbar();
+    });
+    document.addEventListener('change', e => { if (e.target.classList.contains('rowCheck')) refreshToolbar(); });
+
+    document.getElementById('btnDelete')?.addEventListener('click', async () => {
+        const ids = Array.from(rowChecks()).filter(c => c.checked).map(c => c.value);
+        if (!ids.length || !confirm(`Delete ${ids.length} position(s)?`)) return;
+        for (const id of ids) {
+            await fetch(`/Positions/Delete/${id}`, { method: 'POST',
+                headers: { 'RequestVerificationToken': document.querySelector('input[name=__RequestVerificationToken]')?.value } });
+        }
+        location.reload();
+    });
+
+    document.getElementById('btnDuplicate')?.addEventListener('click', () => {
+        const ids = Array.from(rowChecks()).filter(c => c.checked).map(c => c.value);
+        if (ids.length !== 1) { alert('Select exactly one position to duplicate.'); return; }
+        
+        const form = document.createElement('form');
+        form.method = 'post';
+        form.action = `/Positions/Duplicate/${ids[0]}`;
+        const token = document.createElement('input');
+        token.type = 'hidden'; token.name = '__RequestVerificationToken';
+        token.value = document.querySelector('input[name=__RequestVerificationToken]')?.value;
+        form.appendChild(token);
+        document.body.appendChild(form);
+        form.submit();
+    });
+</script>
+}

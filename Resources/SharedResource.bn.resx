@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Positions" xml:space="preserve"><value>পদসমূহ</value></data>
+  <data name="MyProfile" xml:space="preserve"><value>আমার প্রোফাইল</value></data>
+  <data name="AttributeLibrary" xml:space="preserve"><value>অ্যাট্রিবিউট লাইব্রেরি</value></data>
+  <data name="Users" xml:space="preserve"><value>ব্যবহারকারী</value></data>
+  <data name="Login" xml:space="preserve"><value>লগ ইন</value></data>
+  <data name="Logout" xml:space="preserve"><value>লগ আউট</value></data>
+  <data name="Search" xml:space="preserve"><value>খুঁজুন</value></data>
+  <data name="Title" xml:space="preserve"><value>শিরোনাম</value></data>
+  <data name="Company" xml:space="preserve"><value>কোম্পানি</value></data>
+  <data name="Level" xml:space="preserve"><value>লেভেল</value></data>
+  <data name="Access" xml:space="preserve"><value>অ্যাক্সেস</value></data>
+  <data name="Public" xml:space="preserve"><value>পাবলিক</value></data>
+  <data name="Restricted" xml:space="preserve"><value>সীমাবদ্ধ</value></data>
+  <data name="NewPosition" xml:space="preserve"><value>নতুন পদ</value></data>
+  <data name="Me" xml:space="preserve"><value>আমি</value></data>
+  <data name="Info" xml:space="preserve"><value>তথ্য</value></data>
+  <data name="Projects" xml:space="preserve"><value>প্রজেক্ট</value></data>
+  <data name="CVs" xml:space="preserve"><value>সিভি</value></data>
+  <data name="Badges" xml:space="preserve"><value>ব্যাজ</value></data>
+  <data name="FirstName" xml:space="preserve"><value>নামের প্রথম অংশ</value></data>
+  <data name="LastName" xml:space="preserve"><value>নামের শেষ অংশ</value></data>
+  <data name="Location" xml:space="preserve"><value>অবস্থান</value></data>
+  <data name="Status" xml:space="preserve"><value>অবস্থা</value></data>
+  <data name="Updated" xml:space="preserve"><value>আপডেট হয়েছে</value></data>
+  <data name="NewAttribute" xml:space="preserve"><value>নতুন অ্যাট্রিবিউট</value></data>
+  <data name="Category" xml:space="preserve"><value>ক্যাটেগরি</value></data>
+  <data name="Type" xml:space="preserve"><value>ধরন</value></data>
+  <data name="LastUsed" xml:space="preserve"><value>সর্বশেষ ব্যবহৃত</value></data>
+  <data name="AllCategories" xml:space="preserve"><value>সব ক্যাটেগরি</value></data>
+  <data name="Filter" xml:space="preserve"><value>ফিল্টার</value></data>
+  <data name="UserManagement" xml:space="preserve"><value>ব্যবহারকারী ব্যবস্থাপনা</value></data>
+  <data name="Email" xml:space="preserve"><value>ইমেইল</value></data>
+  <data name="Roles" xml:space="preserve"><value>ভূমিকা</value></data>
+  <data name="BlockSelected" xml:space="preserve"><value>নির্বাচিতদের ব্লক করুন</value></data>
+  <data name="UnblockSelected" xml:space="preserve"><value>নির্বাচিতদের আনব্লক করুন</value></data>
+  <data name="DeleteSelected" xml:space="preserve"><value>নির্বাচিতদের মুছে ফেলুন</value></data>
+  <data name="LoginTitle" xml:space="preserve"><value>লগ ইন করুন</value></data>
+  <data name="Password" xml:space="preserve"><value>পাসওয়ার্ড</value></data>
+  <data name="RememberMe" xml:space="preserve"><value>মনে রাখুন</value></data>
+  <data name="NoAccount" xml:space="preserve"><value>অ্যাকাউন্ট নেই?</value></data>
+  <data name="RegisterTitle" xml:space="preserve"><value>অ্যাকাউন্ট তৈরি করুন</value></data>
+</root>

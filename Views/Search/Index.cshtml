@@ -1,0 +1,18 @@
+@model List<CvManagementSystem.Services.SearchResult>
+@{ ViewData["Title"] = "Search results"; }
+
+<h3>Results for "@ViewBag.Query"</h3>
+<table class="table table-hover">
+    <thead><tr><th>Type</th><th>Title</th><th>Detail</th><th>Likes</th></tr></thead>
+    <tbody>
+    @foreach (var r in Model)
+    {
+        <tr onclick="location.href='@r.Url'" style="cursor:pointer">
+            <td><span class="badge text-bg-secondary">@r.Type</span></td>
+            <td>@r.Title</td>
+            <td class="text-muted">@r.Subtitle</td>
+            <td>@(r.LikeCount?.ToString() ?? "")</td>
+        </tr>
+    }
+    </tbody>
+</table>
