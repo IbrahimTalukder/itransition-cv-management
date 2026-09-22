@@ -7,9 +7,6 @@
     <UserSecretsId>cv-management-system-secrets</UserSecretsId>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Include=".gitignore" />
-  </ItemGroup>
 
   <ItemGroup>
  
