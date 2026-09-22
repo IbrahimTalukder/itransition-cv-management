@@ -1,7 +1,7 @@
-.git
+**/bin/
+**/obj/
+**/.vs/
+**/*.user
+.git/
 .gitignore
-.vs
-bin
-obj
-Dockerfile
-*.dockerignore
+README.md
